@@ -49,7 +49,7 @@ const initialRecord: CareRecord = {
 export default function CareRecordForm() {
   const [step, setStep] = useState(0)
   const [record, setRecord] = useState<CareRecord>(initialRecord)
-  const [result, setResult] = useState<(GenerateResponse & { record_id: string }) | null>(null)
+  const [result, setResult] = useState<GenerateResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const updateField = <K extends keyof CareRecord>(key: K, value: CareRecord[K]) => {
@@ -279,7 +279,7 @@ export default function CareRecordForm() {
               onClick={handleSubmit}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
             >
-              介護記録を保存してAIが自動生成を開始する
+              AIで介護記録を自動生成する
             </Button>
           </CardContent>
         </Card>
@@ -301,7 +301,7 @@ export default function CareRecordForm() {
         <div className="space-y-6">
           <Card className="bg-blue-50 border-blue-200">
             <CardHeader>
-              <CardTitle className="text-lg text-blue-700">記録が保存されました</CardTitle>
+              <CardTitle className="text-lg text-blue-700">生成完了</CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-1">
               <p><strong>利用者:</strong> {record.resident_name}</p>
@@ -314,14 +314,9 @@ export default function CareRecordForm() {
           <h2 className="text-xl font-bold text-gray-800">AI生成ドキュメント</h2>
           <GeneratedDocuments documents={result} />
 
-          <div className="flex gap-4">
-            <Button onClick={handleReset} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-              新しい記録を入力する
-            </Button>
-            <a href={`/records/${result.record_id}`} className="flex-1">
-              <Button variant="outline" className="w-full">詳細を見る</Button>
-            </a>
-          </div>
+          <Button onClick={handleReset} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            新しい記録を入力する
+          </Button>
         </div>
       )}
     </div>
