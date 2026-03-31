@@ -96,7 +96,7 @@ export default function AssessmentForm({ input, onChange, onSubmit }: Assessment
         </Button>
       </div>
 
-      <Accordion type="multiple" defaultValue={['basic']} className="space-y-2">
+      <Accordion multiple defaultValue={['basic']} className="space-y-2">
         {/* Section 1: Basic Info */}
         <AccordionItem value="basic">
           <AccordionTrigger className="text-base font-semibold">基本情報</AccordionTrigger>

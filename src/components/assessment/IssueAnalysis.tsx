@@ -86,7 +86,7 @@ export default function IssueAnalysis({ rows, onChange }: IssueAnalysisProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500">優先順位</label>
-                <Select value={row.priority} onValueChange={(v) => updateRow(index, 'priority', v)}>
+                <Select value={row.priority} onValueChange={(v) => v && updateRow(index, 'priority', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
