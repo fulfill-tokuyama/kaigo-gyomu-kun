@@ -19,11 +19,16 @@ interface PdfExportProps {
 
 export default function PdfExport({ sheet, issues, plan }: PdfExportProps) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handle = async (key: string, fn: () => Promise<void>) => {
     setLoading(key)
+    setError(null)
     try {
       await fn()
+    } catch (e) {
+      console.error('PDF generation error:', e)
+      setError(e instanceof Error ? e.message : 'PDF生成に失敗しました')
     } finally {
       setLoading(null)
     }
@@ -32,6 +37,13 @@ export default function PdfExport({ sheet, issues, plan }: PdfExportProps) {
   return (
     <div className="space-y-3">
       <h3 className="font-semibold text-gray-800">PDF出力</h3>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Button
           variant="outline"

@@ -2,27 +2,48 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { AssessmentSheet, IssueAnalysisRow, DetailedCarePlan } from '@/types/assessment'
 
+let fontLoaded = false
+
 async function loadFont(doc: jsPDF) {
-  const fontUrl = 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansCJKjp-VF.ttf'
-  const response = await fetch(fontUrl)
-  const buffer = await response.arrayBuffer()
-  const base64 = btoa(
-    new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-  )
-  doc.addFileToVFS('NotoSansJP.ttf', base64)
-  doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal')
-  doc.setFont('NotoSansJP')
+  if (!fontLoaded) {
+    try {
+      const fontUrl = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf'
+      const response = await fetch(fontUrl)
+      if (!response.ok) throw new Error(`Font fetch failed: ${response.status}`)
+      const buffer = await response.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      let binary = ''
+      const chunkSize = 8192
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+      }
+      const base64 = btoa(binary)
+      doc.addFileToVFS('NotoSansJP.ttf', base64)
+      doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal')
+      fontLoaded = true
+    } catch (e) {
+      console.warn('Japanese font load failed, using fallback:', e)
+    }
+  } else {
+    doc.addFileToVFS('NotoSansJP.ttf', '')
+    doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal')
+  }
+
+  try {
+    doc.setFont('NotoSansJP')
+  } catch {
+    // fallback to default font if NotoSansJP not available
+  }
 }
 
-export async function generateAssessmentSheetPdf(sheet: AssessmentSheet): Promise<Blob> {
+export async function generateAssessmentSheetPdf(sheet: AssessmentSheet): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   await loadFont(doc)
 
   doc.setFontSize(16)
-  doc.text('アセスメントシート（課題分析標準項目）', 15, 20)
+  doc.text('Assessment Sheet', 15, 20)
 
   let y = 30
-  doc.setFontSize(10)
   for (const item of sheet.items) {
     if (y > 270) {
       doc.addPage()
@@ -37,41 +58,43 @@ export async function generateAssessmentSheetPdf(sheet: AssessmentSheet): Promis
     y += lines.length * 4.5 + 4
   }
 
-  return doc.output('blob')
+  doc.save('assessment-sheet.pdf')
 }
 
-export async function generateIssueAnalysisPdf(rows: IssueAnalysisRow[]): Promise<Blob> {
+export async function generateIssueAnalysisPdf(rows: IssueAnalysisRow[]): Promise<void> {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   await loadFont(doc)
 
   doc.setFontSize(16)
-  doc.text('課題分析シート（課題整理総括表）', 15, 20)
+  doc.text('Issue Analysis Sheet', 15, 20)
+
+  const fontName = fontLoaded ? 'NotoSansJP' : 'helvetica'
 
   autoTable(doc, {
     startY: 28,
-    head: [['課題（ニーズ）', '現状', '目標', '背景・原因', '優先順位', 'サービスの方向性']],
+    head: [['Needs', 'Current Status', 'Goal', 'Background', 'Priority', 'Service Direction']],
     body: rows.map((r) => [r.need, r.current_status, r.goal, r.background, r.priority, r.service_direction]),
-    styles: { font: 'NotoSansJP', fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [59, 130, 246], font: 'NotoSansJP' },
+    styles: { font: fontName, fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [59, 130, 246], font: fontName },
     columnStyles: {
       0: { cellWidth: 40 },
-      4: { cellWidth: 20, halign: 'center' },
+      4: { cellWidth: 20, halign: 'center' as const },
     },
   })
 
-  return doc.output('blob')
+  doc.save('issue-analysis.pdf')
 }
 
-export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<Blob> {
+export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   await loadFont(doc)
 
   doc.setFontSize(16)
-  doc.text('居宅サービス計画書（ケアプラン）', 15, 20)
+  doc.text('Care Plan', 15, 20)
 
   let y = 32
   doc.setFontSize(12)
-  doc.text('長期目標（6ヶ月）', 15, y)
+  doc.text('Long-term Goals (6 months)', 15, y)
   y += 6
   doc.setFontSize(10)
   for (const goal of plan.long_term_goals) {
@@ -82,7 +105,7 @@ export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<Blob>
 
   y += 4
   doc.setFontSize(12)
-  doc.text('短期目標（3ヶ月）', 15, y)
+  doc.text('Short-term Goals (3 months)', 15, y)
   y += 6
   doc.setFontSize(10)
   for (const goal of plan.short_term_goals) {
@@ -93,43 +116,33 @@ export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<Blob>
 
   y += 4
   doc.setFontSize(12)
-  doc.text('サービス内容', 15, y)
+  doc.text('Services', 15, y)
   y += 2
+
+  const fontName = fontLoaded ? 'NotoSansJP' : 'helvetica'
 
   autoTable(doc, {
     startY: y,
-    head: [['内容', '種類', '担当者', '頻度', '期間']],
+    head: [['Content', 'Type', 'Provider', 'Frequency', 'Period']],
     body: plan.services.map((s) => [s.content, s.type, s.provider, s.frequency, s.period]),
-    styles: { font: 'NotoSansJP', fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [59, 130, 246], font: 'NotoSansJP' },
+    styles: { font: fontName, fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [59, 130, 246], font: fontName },
     columnStyles: { 0: { cellWidth: 60 } },
   })
 
-  return doc.output('blob')
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  doc.save('care-plan.pdf')
 }
 
 export async function downloadAssessmentSheetPdf(sheet: AssessmentSheet) {
-  const blob = await generateAssessmentSheetPdf(sheet)
-  downloadBlob(blob, 'assessment-sheet.pdf')
+  await generateAssessmentSheetPdf(sheet)
 }
 
 export async function downloadIssueAnalysisPdf(rows: IssueAnalysisRow[]) {
-  const blob = await generateIssueAnalysisPdf(rows)
-  downloadBlob(blob, 'issue-analysis.pdf')
+  await generateIssueAnalysisPdf(rows)
 }
 
 export async function downloadCarePlanPdf(plan: DetailedCarePlan) {
-  const blob = await generateCarePlanPdf(plan)
-  downloadBlob(blob, 'care-plan.pdf')
+  await generateCarePlanPdf(plan)
 }
 
 export async function downloadAllPdf(
