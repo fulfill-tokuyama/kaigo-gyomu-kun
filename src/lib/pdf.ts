@@ -40,7 +40,7 @@ export async function generateAssessmentSheetPdf(sheet: AssessmentSheet): Promis
   await loadFont(doc)
 
   doc.setFontSize(16)
-  doc.text('Assessment Sheet', 15, 20)
+  doc.text('アセスメントシート（課題分析標準項目）', 15, 20)
 
   let y = 30
   for (const item of sheet.items) {
@@ -65,13 +65,13 @@ export async function generateIssueAnalysisPdf(rows: IssueAnalysisRow[]): Promis
   await loadFont(doc)
 
   doc.setFontSize(16)
-  doc.text('Issue Analysis Sheet', 15, 20)
+  doc.text('課題分析シート（課題整理総括表）', 15, 20)
 
   const fontName = getFontName()
 
   autoTable(doc, {
     startY: 28,
-    head: [['Needs', 'Current Status', 'Goal', 'Background', 'Priority', 'Service Direction']],
+    head: [['課題（ニーズ）', '現状', '目標', '背景・原因', '優先順位', 'サービスの方向性']],
     body: rows.map((r) => [r.need, r.current_status, r.goal, r.background, r.priority, r.service_direction]),
     styles: { font: fontName, fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [59, 130, 246], font: fontName },
@@ -89,11 +89,11 @@ export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<void>
   await loadFont(doc)
 
   doc.setFontSize(16)
-  doc.text('Care Plan', 15, 20)
+  doc.text('居宅サービス計画書（ケアプラン）', 15, 20)
 
   let y = 32
   doc.setFontSize(12)
-  doc.text('Long-term Goals (6 months)', 15, y)
+  doc.text('長期目標（6ヶ月）', 15, y)
   y += 6
   doc.setFontSize(10)
   for (const goal of plan.long_term_goals) {
@@ -104,7 +104,7 @@ export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<void>
 
   y += 4
   doc.setFontSize(12)
-  doc.text('Short-term Goals (3 months)', 15, y)
+  doc.text('短期目標（3ヶ月）', 15, y)
   y += 6
   doc.setFontSize(10)
   for (const goal of plan.short_term_goals) {
@@ -115,14 +115,14 @@ export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<void>
 
   y += 4
   doc.setFontSize(12)
-  doc.text('Services', 15, y)
+  doc.text('サービス内容', 15, y)
   y += 2
 
   const fontName = getFontName()
 
   autoTable(doc, {
     startY: y,
-    head: [['Content', 'Type', 'Provider', 'Frequency', 'Period']],
+    head: [['内容', '種類', '担当者', '頻度', '期間']],
     body: plan.services.map((s) => [s.content, s.type, s.provider, s.frequency, s.period]),
     styles: { font: fontName, fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [59, 130, 246], font: fontName },
