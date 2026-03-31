@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import ModeSelector from '@/components/ModeSelector'
+import CareRecordForm from '@/components/CareRecordForm'
 
-export default function Home() {
+export default function QuickPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-4 py-4">
@@ -11,9 +11,8 @@ export default function Home() {
           </Link>
         </div>
       </header>
-      <div className="px-4 py-16">
-        <h2 className="text-xl font-bold text-gray-800 text-center mb-8">モードを選択してください</h2>
-        <ModeSelector />
+      <div className="px-4 py-8">
+        <CareRecordForm />
       </div>
     </main>
   )
