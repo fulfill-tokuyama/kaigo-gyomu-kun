@@ -2,10 +2,10 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { AssessmentSheet, IssueAnalysisRow, DetailedCarePlan } from '@/types/assessment'
 
-let fontLoaded = false
+let cachedFontBase64: string | null = null
 
 async function loadFont(doc: jsPDF) {
-  if (!fontLoaded) {
+  if (cachedFontBase64 === null) {
     try {
       const fontUrl = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf'
       const response = await fetch(fontUrl)
@@ -17,23 +17,22 @@ async function loadFont(doc: jsPDF) {
       for (let i = 0; i < bytes.length; i += chunkSize) {
         binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
       }
-      const base64 = btoa(binary)
-      doc.addFileToVFS('NotoSansJP.ttf', base64)
-      doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal')
-      fontLoaded = true
+      cachedFontBase64 = btoa(binary)
     } catch (e) {
       console.warn('Japanese font load failed, using fallback:', e)
+      cachedFontBase64 = ''
     }
-  } else {
-    doc.addFileToVFS('NotoSansJP.ttf', '')
-    doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal')
   }
 
-  try {
+  if (cachedFontBase64) {
+    doc.addFileToVFS('NotoSansJP.ttf', cachedFontBase64)
+    doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal')
     doc.setFont('NotoSansJP')
-  } catch {
-    // fallback to default font if NotoSansJP not available
   }
+}
+
+function getFontName(): string {
+  return cachedFontBase64 ? 'NotoSansJP' : 'helvetica'
 }
 
 export async function generateAssessmentSheetPdf(sheet: AssessmentSheet): Promise<void> {
@@ -68,7 +67,7 @@ export async function generateIssueAnalysisPdf(rows: IssueAnalysisRow[]): Promis
   doc.setFontSize(16)
   doc.text('Issue Analysis Sheet', 15, 20)
 
-  const fontName = fontLoaded ? 'NotoSansJP' : 'helvetica'
+  const fontName = getFontName()
 
   autoTable(doc, {
     startY: 28,
@@ -119,7 +118,7 @@ export async function generateCarePlanPdf(plan: DetailedCarePlan): Promise<void>
   doc.text('Services', 15, y)
   y += 2
 
-  const fontName = fontLoaded ? 'NotoSansJP' : 'helvetica'
+  const fontName = getFontName()
 
   autoTable(doc, {
     startY: y,
